@@ -1,0 +1,1206 @@
+{
+    "info": {
+        "_postman_id": "8d4db2e5-25d6-549f-843e-0cda3d9603c9",
+        "name": "Vigilancia Epidemiológica – Pruebas de integración (RE 4.1)",
+        "description": "Corrida 1: carpetas 0 y 1, antes de Playwright. Corrida 2: carpetas 0 y 2, después de Playwright. Las claves van solo en el valor actual del environment o por --env-var.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "0 · Sesiones y referencias",
+            "item": [
+                {
+                    "name": "P-01 Sesión de admin",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/session?v=custom:(authenticated,user:(username))"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('admin autenticado', () => pm.expect(pm.response.json().authenticated).to.eql(true));"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "P-02 Sesión del médico y su proveedor",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{medicoUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{medicoPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/session?v=custom:(authenticated,user:(username),currentProvider:(uuid))"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const body = pm.response.json();",
+                                    "pm.test('médico autenticado', () => pm.expect(body.authenticated).to.eql(true));",
+                                    "pm.test('el médico tiene cuenta de proveedor', () => pm.expect(body.currentProvider && body.currentProvider.uuid).to.be.a('string'));",
+                                    "pm.environment.set('medicoProviderUuid', body.currentProvider && body.currentProvider.uuid);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "P-03 Sesión del epidemiólogo",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{epiUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{epiPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/session?v=custom:(authenticated)"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('epidemiólogo autenticado', () => pm.expect(pm.response.json().authenticated).to.eql(true));"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "P-04 Sesión del usuario sin acceso",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{sinAccesoUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{sinAccesoPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/session?v=custom:(authenticated)"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('sin.acceso autenticado', () => pm.expect(pm.response.json().authenticated).to.eql(true));"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "P-05 Paciente E2E-VIG-01",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/patient?identifier={{dni01}}&v=custom:(uuid,display)"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const results = pm.response.json().results;",
+                                    "pm.test('un paciente con el DNI de E2E-VIG-01', () => pm.expect(results).to.have.lengthOf(1));",
+                                    "pm.environment.set('patient01Uuid', results[0].uuid);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "P-06 Paciente E2E-VIG-02",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/patient?identifier={{dni02}}&v=custom:(uuid,display)"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const results = pm.response.json().results;",
+                                    "pm.test('un paciente con el DNI de E2E-VIG-02', () => pm.expect(results).to.have.lengthOf(1));",
+                                    "pm.environment.set('patient02Uuid', results[0].uuid);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "P-07 Evento notificable del diagnóstico",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/catalog"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const events = pm.response.json().events;",
+                                    "const event = events.find(e => e.conceptUuid === pm.environment.get('eventConceptUuid'));",
+                                    "pm.test('el diagnóstico está configurado como evento activo', () => pm.expect(event).to.be.an('object'));",
+                                    "pm.test('el evento cubre el diagnóstico (diagnosisConceptUuids)', () =>",
+                                    "  pm.expect(event.diagnosisConceptUuids).to.include(pm.environment.get('eventConceptUuid')));",
+                                    "pm.environment.set('eventUuid', event.uuid);"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "1 · IT-01 y precondición de IT-11 (antes de Playwright)",
+            "item": [
+                {
+                    "name": "IT-01a Módulo iniciado",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/module/sihsalusepidemiologicalsurveillance?v=full"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const module = pm.response.json();",
+                                    "pm.test('IT-01 el módulo existe (200)', () => pm.response.to.have.status(200));",
+                                    "pm.test('IT-01 el módulo está iniciado', () => pm.expect(module.started).to.eql(true));",
+                                    "console.log('Versión del módulo:', module.version);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-01b Healthcheck",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/healthcheck"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-01 healthcheck 200', () => pm.response.to.have.status(200));",
+                                    "pm.test('IT-01 estado UP', () => pm.expect(pm.response.json().status).to.eql('UP'));",
+                                    "pm.test('IT-01 las 12 tablas del componente son accesibles', () => pm.expect(pm.response.json().tableCount).to.eql(12));"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-01c Privilegio «Vigilancia Epidemiologica: Ver Casos»",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/privilege/Vigilancia%20Epidemiologica%3A%20Ver%20Casos?v=default"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-01 privilegio «Vigilancia Epidemiologica: Ver Casos» registrado', () => {",
+                                    "  pm.response.to.have.status(200);",
+                                    "  pm.expect(pm.response.json().name).to.eql('Vigilancia Epidemiologica: Ver Casos');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-01c Privilegio «Vigilancia Epidemiologica: Registrar Casos»",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/privilege/Vigilancia%20Epidemiologica%3A%20Registrar%20Casos?v=default"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-01 privilegio «Vigilancia Epidemiologica: Registrar Casos» registrado', () => {",
+                                    "  pm.response.to.have.status(200);",
+                                    "  pm.expect(pm.response.json().name).to.eql('Vigilancia Epidemiologica: Registrar Casos');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-01c Privilegio «Vigilancia Epidemiologica: Editar Casos»",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/privilege/Vigilancia%20Epidemiologica%3A%20Editar%20Casos?v=default"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-01 privilegio «Vigilancia Epidemiologica: Editar Casos» registrado', () => {",
+                                    "  pm.response.to.have.status(200);",
+                                    "  pm.expect(pm.response.json().name).to.eql('Vigilancia Epidemiologica: Editar Casos');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-01c Privilegio «Vigilancia Epidemiologica: Ver Indicadores»",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/privilege/Vigilancia%20Epidemiologica%3A%20Ver%20Indicadores?v=default"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-01 privilegio «Vigilancia Epidemiologica: Ver Indicadores» registrado', () => {",
+                                    "  pm.response.to.have.status(200);",
+                                    "  pm.expect(pm.response.json().name).to.eql('Vigilancia Epidemiologica: Ver Indicadores');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-01c Privilegio «Vigilancia Epidemiologica: Configurar»",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/privilege/Vigilancia%20Epidemiologica%3A%20Configurar?v=default"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-01 privilegio «Vigilancia Epidemiologica: Configurar» registrado', () => {",
+                                    "  pm.response.to.have.status(200);",
+                                    "  pm.expect(pm.response.json().name).to.eql('Vigilancia Epidemiologica: Configurar');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-11a Regla de brote del foco (precondición)",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "PUT",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/configuration/outbreak-rules",
+                        "description": "Reemplaza la regla de foco por defecto (mínimo 0, que alertaría desde el primer caso) por una que exige más de 1 caso autóctono en la semana.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "[\n  {\n    \"id\": \"default-THRESHOLD\",\n    \"type\": \"THRESHOLD\",\n    \"weeks\": 1,\n    \"percentile\": 75\n  },\n  {\n    \"id\": \"default-CONSECUTIVE\",\n    \"type\": \"CONSECUTIVE\",\n    \"weeks\": 2,\n    \"percentile\": 75\n  },\n  {\n    \"id\": \"it11-foco\",\n    \"type\": \"FOCUS_CASES\",\n    \"minimumCases\": 1,\n    \"origin\": \"AUTOCTONO\",\n    \"focus\": \"ELIMINATED\"\n  }\n]",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('regla guardada (200)', () => pm.response.to.have.status(200));",
+                                    "const rule = pm.response.json().find(r => r.id === 'it11-foco');",
+                                    "pm.test('regla FOCUS_CASES: más de 1 caso autóctono en foco eliminado', () => {",
+                                    "  pm.expect(rule.minimumCases).to.eql(1);",
+                                    "  pm.expect(rule.origin).to.eql('AUTOCTONO');",
+                                    "  pm.expect(rule.focus).to.eql('ELIMINATED');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "2 · Verificaciones de API (después de Playwright)",
+            "item": [
+                {
+                    "name": "IT-03 Caso de E2E-VIG-01: atención, diagnóstico y CIE-10",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/cases?patient={{patient01Uuid}}"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const results = pm.response.json().results;",
+                                    "pm.test('un caso para E2E-VIG-01', () => pm.expect(results).to.have.lengthOf(1));",
+                                    "const c = results[0];",
+                                    "pm.environment.set('case01Uuid', c.uuid);",
+                                    "pm.test('IT-03 diagnosisIcd10 sale del mapping (B50…)', () => pm.expect(c.diagnosisIcd10).to.match(/^B50/));",
+                                    "pm.test('IT-03 referencia la atención y el diagnóstico del SIH', () => {",
+                                    "  pm.expect(c.encounterUuid).to.be.a('string');",
+                                    "  pm.expect(c.diagnosisUuid).to.be.a('string');",
+                                    "});",
+                                    "pm.test('IT-04 CONFIRMADO con laboratoryObservationUuid', () => {",
+                                    "  pm.expect(c.diagnosisType).to.eql('CONFIRMADO');",
+                                    "  pm.expect(c.laboratoryObservationUuid).to.be.a('string');",
+                                    "});",
+                                    "pm.test('IT-05 centro poblado guardado', () => pm.expect(c.infectionAddressUuid).to.be.a('string'));",
+                                    "pm.test('IT-05 El caso devuelve el antecedente de viaje: SANTA CLOTILDE (1601070001), de 3 a 1 día antes del inicio de síntomas', () => {",
+                                    "  pm.expect(c.travelHistory).to.be.an('array').with.lengthOf(1);",
+                                    "  const trip = c.travelHistory[0];",
+                                    "  const shift = (iso, days) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); };",
+                                    "  pm.expect(trip.uuid).to.be.a('string').and.not.empty;",
+                                    "  pm.expect(trip.travelAddress).to.be.a('string').and.not.eql(c.infectionAddressUuid);",
+                                    "  pm.expect(String(trip.travelAddressDisplay).toUpperCase()).to.include('SANTA CLOTILDE');",
+                                    "  pm.expect(trip.startDate).to.eql(shift(c.onsetDate, -3));",
+                                    "  pm.expect(trip.endDate).to.eql(shift(c.onsetDate, -1));",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-07 El caso conserva al médico como profesional",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{adminUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{adminPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/cases/{{case01Uuid}}"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-07/IT-08 providerUuid = proveedor del médico, también tras la edición del epidemiólogo', () =>",
+                                    "  pm.expect(pm.response.json().providerUuid).to.eql(pm.environment.get('medicoProviderUuid')));"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-08 Epidemiólogo: POST /cases → 403",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{epiUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{epiPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/cases",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-08 registro denegado (403)', () => pm.response.to.have.status(403));",
+                                    "pm.test('código ACCESS_DENIED', () => pm.expect(pm.response.json().code).to.eql('ACCESS_DENIED'));"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-09a Sin acceso: GET /cases",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{sinAccesoUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{sinAccesoPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/cases"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-09 consulta rechazada (401 o 403)', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-09b Sin acceso: POST /cases",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{sinAccesoUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{sinAccesoPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/cases",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-09 registro rechazado (401 o 403)', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-09c Sin sesión: GET /cases",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/cases"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('IT-09 sin autenticación (401 o 403)', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-10 Alerta inmediata del caso de E2E-VIG-02 atendida",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{epiUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{epiPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/alerts?reason=IMMEDIATE_EVENT"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const pending = pm.response.json();",
+                                    "pm.test('IT-10 alerta de caso nuevo atendida', () => {",
+                                    "  const found = pending.filter(a => a.status === 'ATTENDED' && a.attendedBy);",
+                                    "  pm.expect(found.length).to.be.above(0);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-11b Alerta de brote del foco",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{epiUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{epiPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/alerts?type=OUTBREAK&reason=FOCUS_CASES"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const alerts = pm.response.json().filter(a => String(a.additionalInformation).includes('casos: 2'));",
+                                    "pm.test('IT-11 una alerta de brote con 2 casos', () => pm.expect(alerts).to.have.lengthOf(1));",
+                                    "pm.test('IT-11 con centro poblado, evento y cálculo', () => {",
+                                    "  pm.expect(alerts[0].center).to.be.a('string');",
+                                    "  pm.expect(alerts[0].eventUuid).to.eql(pm.environment.get('eventUuid'));",
+                                    "  pm.expect(alerts[0].additionalInformation).to.include('superar: 1');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-12 Registro semanal con etnia MINSA",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{epiUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{epiPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/weekly-records?year={{epiYear}}&week={{epiWeek}}"
+                    },
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// Semana epidemiológica actual en America/Lima (domingo a sábado; la semana 1 contiene el 4 de enero).",
+                                    "const DAY = 86400000;",
+                                    "const lima = new Date(Date.now() - 5 * 3600 * 1000);",
+                                    "const t = Date.UTC(lima.getUTCFullYear(), lima.getUTCMonth(), lima.getUTCDate());",
+                                    "const weekStart = x => x - new Date(x).getUTCDay() * DAY;",
+                                    "const firstWeek = y => weekStart(Date.UTC(y, 0, 4));",
+                                    "let year = new Date(t).getUTCFullYear();",
+                                    "if (t < firstWeek(year)) year--; else if (t >= firstWeek(year + 1)) year++;",
+                                    "pm.environment.set('epiYear', year);",
+                                    "pm.environment.set('epiWeek', Math.floor((weekStart(t) - firstWeek(year)) / (7 * DAY)) + 1);"
+                                ]
+                            }
+                        },
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const rows = pm.response.json().rows;",
+                                    "const first = rows.find(r => r.dni === pm.environment.get('dni01'));",
+                                    "const second = rows.find(r => r.dni === pm.environment.get('dni02'));",
+                                    "pm.test('IT-12 ambos casos notificados en la semana', () => { pm.expect(first).to.be.an('object'); pm.expect(second).to.be.an('object'); });",
+                                    "pm.test('IT-12 E2E-VIG-01: código de etnia y grupo 4', () => {",
+                                    "  pm.expect(first.ethnicityGroup).to.eql(4);",
+                                    "  pm.expect(first.ethnicity).to.be.a('number');",
+                                    "});",
+                                    "pm.test('IT-12 E2E-VIG-02: grupo 1 y código vacío', () => {",
+                                    "  pm.expect(second.ethnicityGroup).to.eql(1);",
+                                    "  pm.expect(second.ethnicity).to.eql(null);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "IT-06 Alerta de defunción atribuible",
+                    "protocolProfileBehavior": {
+                        "disableCookies": true
+                    },
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "basic",
+                            "basic": [
+                                {
+                                    "key": "username",
+                                    "value": "{{epiUser}}",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{epiPass}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/alerts?reason=DEATH"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const death = pm.response.json().filter(a => a.caseUuid === pm.environment.get('case01Uuid'));",
+                                    "pm.test('IT-06 alerta de defunción del caso de E2E-VIG-01', () => pm.expect(death).to.have.lengthOf(1));"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
