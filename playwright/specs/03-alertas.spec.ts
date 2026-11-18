@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { alerts, casesOf, patientByDni, sourceFor } from '../support/api';
 import { TRAVEL, registerCase } from '../support/case-form';
 import { env } from '../support/env';
+import { Tarea } from '../support/pasos';
 import { contextFor, openDashboard } from '../support/session';
 
 test('IT-10 · Alertas en tiempo real: la alerta del caso nuevo llega sin recargar y se atiende', async ({ browser }) => {
@@ -38,8 +39,12 @@ test('IT-10 · Alertas en tiempo real: la alerta del caso nuevo llega sin recarg
       .filter({ hasText: 'Pendiente' });
     await expect(row).toHaveCount(1, { timeout: 60_000 });
     expect(reloads, 'la bandeja no se recargó').toBe(0);
-    await row.getByRole('button', { name: 'Marcar como atendida' }).click();
+    const tarea = new Tarea('Atender una alerta');
+    await tarea.paso('Ubicar la alerta en la bandeja de alertas → Marcar como atendida', () =>
+      row.getByRole('button', { name: 'Marcar como atendida' }).click(),
+    );
     await expect(epi.page.getByText('Alerta marcada como atendida')).toBeVisible();
+    tarea.cerrar();
   });
 
   await test.step('La alerta queda ATTENDED en el backend', async () => {

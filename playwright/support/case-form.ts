@@ -1,6 +1,7 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { type PatientInfo, type SourceInfo, ageAt, casesOf, limaNow, toDisplayDate } from './api';
 import { MODULE_API, env } from './env';
+import { Tarea } from './pasos';
 
 const SEX: Record<string, string> = { F: 'Femenino', M: 'Masculino', O: 'Otro', U: 'Sin información' };
 
@@ -34,8 +35,10 @@ export async function registerCase(
   source: SourceInfo,
   withTravel = false,
 ): Promise<RegisteredCase> {
+  // «Nuevo caso» abre el formulario: es navegación dentro del componente, no un paso (RE 1.2).
   await page.getByRole('button', { name: 'Nuevo caso' }).click();
   const dialog = page.getByRole('dialog', { name: 'Nuevo caso' });
+  const tarea = new Tarea('Registrar un caso');
   await expect(dialog).toBeVisible();
 
   await test.step('IT-02 Registro de pacientes: búsqueda y datos precargados', async () => {
@@ -53,7 +56,9 @@ export async function registerCase(
     const encounter = dialog.locator('#case-sourceEncounterUuid');
     await expect(encounter.locator(`option[value="${source.encounterUuid}"]`)).toHaveCount(1);
     await encounter.selectOption(source.encounterUuid);
-    await dialog.getByRole('button', { name: 'Continuar' }).click();
+    await tarea.paso('Seleccionar el paciente y la atención de origen → Continuar', () =>
+      dialog.getByRole('button', { name: 'Continuar' }).click(),
+    );
   });
 
   await test.step('IT-03 Hoja clínica: diagnóstico real con su código CIE-10', async () => {
@@ -110,16 +115,22 @@ export async function registerCase(
   await dialog.locator('#case-surveillanceType').selectOption('PASIVA');
   // Con segundos en 00, el campo datetime-local guarda el valor sin ellos («HH:mm»); se escribe igual.
   await dialog.locator('#case-notificationDate').fill(limaNow().dateTime.replace(/:00$/, ''));
-  await dialog.getByRole('button', { name: 'Continuar' }).click();
+  await tarea.paso('Completar los datos del caso → Continuar', () =>
+    dialog.getByRole('button', { name: 'Continuar' }).click(),
+  );
 
   await expect(dialog.getByRole('heading', { name: 'Revisa antes de registrar' })).toBeVisible();
   const response = await captureResponse(
     page,
     'POST',
     (url) => url.endsWith(`${MODULE_API}/cases`),
-    () => dialog.getByRole('button', { name: 'Registrar caso', exact: true }).click(),
+    () =>
+      tarea.paso('Revisar el resumen del caso → Registrar caso', () =>
+        dialog.getByRole('button', { name: 'Registrar caso', exact: true }).click(),
+      ),
     async () => (await casesOf(page.context().request, patient.uuid))[0],
   );
+  tarea.cerrar();
   return { ...response, addressHierarchyRequests };
 }
 
@@ -152,22 +163,29 @@ function escape(text: string) {
 }
 
 /** Abre el modal de edición de un caso desde la tabla de casos, buscando la fila por DNI. */
+const ediciones = new WeakMap<Locator, Tarea>();
+
 export async function openEdit(page: Page, dni: string) {
+  const tarea = new Tarea('Editar un caso');
   const row = page.getByRole('row').filter({ hasText: dni });
   await expect(row).toHaveCount(1);
-  await row.getByRole('button', { name: 'Editar' }).click();
+  await tarea.paso('Seleccionar el caso en la tabla de casos → Editar', () =>
+    row.getByRole('button', { name: 'Editar' }).click(),
+  );
   const dialog = page.getByRole('dialog').filter({ has: page.locator('#edit-origin') });
   await expect(dialog.locator('#edit-origin')).toBeVisible();
+  ediciones.set(dialog, tarea);
   return dialog;
 }
 
 /** Guarda la edición y devuelve la respuesta del PUT /cases/{uuid}. */
 export async function saveEdit(page: Page, dialog: Locator) {
-  return captureResponse(
+  const tarea = ediciones.get(dialog) ?? new Tarea('Editar un caso');
+  const result = await captureResponse(
     page,
     'PUT',
     (url) => url.includes(`${MODULE_API}/cases/`),
-    () => dialog.getByRole('button', { name: 'Guardar' }).click(),
+    () => tarea.paso('Modificar los datos del caso → Guardar', () => dialog.getByRole('button', { name: 'Guardar' }).click()),
     async (url) => {
       const uuid = url.split('/cases/')[1].split('?')[0];
       const response = await page.context().request.get(`${MODULE_API}/cases/${uuid}`);
@@ -175,4 +193,6 @@ export async function saveEdit(page: Page, dialog: Locator) {
       return response.json();
     },
   );
+  tarea.cerrar();
+  return result;
 }

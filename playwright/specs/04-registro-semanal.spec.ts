@@ -5,6 +5,7 @@ import ExcelJS from 'exceljs';
 import { limaNow } from '../support/api';
 import { MODULE_API, env } from '../support/env';
 import { epiWeek } from '../support/epiweek';
+import { Tarea } from '../support/pasos';
 import { contextFor, openDashboard } from '../support/session';
 
 const DOWNLOADS = path.resolve(__dirname, '..', 'descargas');
@@ -31,11 +32,23 @@ function parseCsv(text: string): string[][] {
     .map((line) => [...line.matchAll(/"((?:[^"]|"")*)"/g)].map((m) => m[1].replace(/""/g, '"')));
 }
 
-async function download(page: Page, option: string) {
-  await page.getByRole('button', { name: 'Exportar' }).click();
+/**
+ * Descarga el registro semanal como lo hace el usuario: la semana de notificación ya viene
+ * seleccionada (semana actual) y se exporta en el formato elegido. Cuenta los pasos (RNF-03).
+ */
+async function download(page: Page, option: string, year: number, week: number) {
+  const tarea = new Tarea(`Descargar el registro semanal (${option})`);
+  await tarea.paso('Seleccionar el año y la semana epidemiológica de notificación (por defecto, la actual)', async () => {
+    await expect(page.locator('#weekly-year')).toHaveValue(String(year));
+    await expect(page.locator('#weekly-week')).toHaveValue(String(week));
+  });
   const pending = page.waitForEvent('download');
-  await page.getByRole('menuitem', { name: option }).click();
+  await tarea.paso('Exportar → elegir el formato', async () => {
+    await page.getByRole('button', { name: 'Exportar' }).click();
+    await page.getByRole('menuitem', { name: option }).click();
+  });
   const file = await pending;
+  tarea.cerrar();
   fs.mkdirSync(DOWNLOADS, { recursive: true });
   const target = path.join(DOWNLOADS, file.suggestedFilename());
   await file.saveAs(target);
@@ -77,13 +90,13 @@ test('IT-12 · Registro semanal: filas reales con etnia MINSA y exportación xls
   await expect(page.getByRole('row').filter({ hasText: env.dni02 })).toHaveCount(1);
 
   await test.step('Exportación CSV con las columnas de etnia', async () => {
-    const file = await download(page, 'Exportar CSV (.csv)');
+    const file = await download(page, 'Exportar CSV (.csv)', year, week);
     expectEthnicity(ethnicityByDni(parseCsv(fs.readFileSync(file, 'utf8'))));
     await test.info().attach('registro-semanal.csv', { path: file });
   });
 
   await test.step('Exportación Excel con las columnas de etnia', async () => {
-    const file = await download(page, 'Exportar Excel (.xlsx)');
+    const file = await download(page, 'Exportar Excel (.xlsx)', year, week);
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(file);
     const rows: string[][] = [];

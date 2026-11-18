@@ -57,6 +57,7 @@ microfrontend del componente. Se usan:
 | IT-11 Alerta de brote | Postman (regla) + Playwright | Corrida 1 (IT-11a), `03-alertas` y corrida 2 |
 | IT-12 Registro semanal | Postman + Playwright | `04-registro-semanal` y corrida 2 |
 | IT-13 OpenStreetMap | Playwright | `06-mapa` |
+| RNF-03 Pasos de las tareas principales | Playwright | anotaciones en todo el escenario y `07-consultas` |
 
 Las pruebas reproducen un único escenario en orden:
 
@@ -199,6 +200,24 @@ Además, guarda una captura por sección. Los perfiles dependen del escenario, a
 si este pasó. Los dispositivos móviles se emulan (pantalla, táctil y agente de usuario); la
 verificación en dispositivos físicos no forma parte de estas pruebas.
 
+## Pasos de las tareas principales (RNF-03)
+
+`support/pasos.ts` cuenta los pasos de cada tarea principal con la definición del RE 1.2: un paso es
+cada pantalla o acción con la que el usuario confirma una selección o una operación dentro del
+componente. No cuentan los clics ni el llenado de campos dentro de una misma pantalla, el inicio de
+sesión ni la navegación del SIH.SALUS hasta el componente. Cada tarea deja en el reporte HTML una
+anotación `RNF-03` con su número de pasos y su secuencia, y la prueba falla si supera 3.
+
+| Tarea | Pasos contados | Dónde |
+|---|---|---|
+| Registrar un caso | 3: Continuar → Continuar → Registrar caso | `registerCase` (`01-registro-medico`, `03-alertas`) |
+| Editar un caso | 2: Editar → Guardar | `openEdit` y `saveEdit` (`02-seguridad`, `05-defuncion`) |
+| Descargar el registro semanal | 2: semana de notificación (por defecto, la actual) → Exportar y formato | `04-registro-semanal` |
+| Atender una alerta | 1: Marcar como atendida | `03-alertas` |
+| Consultar la información epidemiológica | 1 por sección: elegir la sección y el filtro; la información se actualiza sin otra acción | `07-consultas` (temporal, indicadores, demográfica y geográfica) |
+
+Para ver el conteo, abra el reporte (`npm run report`) y revise las anotaciones de cada prueba.
+
 ## Notas
 
 - IT-05: el formulario actual no usa listas en cascada (departamento → provincia → distrito →
@@ -217,4 +236,4 @@ verificación en dispositivos físicos no forma parte de estas pruebas.
 
 ## Licencia
 
-[Mozilla Public License 2.0](LICENSE), la misma del backend del componente.
+[Mozilla Public License 2.0](LICENSE)
