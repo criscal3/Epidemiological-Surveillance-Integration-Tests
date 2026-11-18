@@ -178,6 +178,18 @@ docker compose exec -T <servicio-db> sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD
 
 Estas carpetas no se versionan (vea *Seguridad*); se regeneran en cada corrida.
 
+Al terminar una corrida, mueva el reporte de Playwright a `reportes/` con un nombre que indique la
+corrida, ya que la siguiente ejecución lo sobrescribe. La carpeta `reportes/` queda así:
+
+| Archivo o carpeta | Corrida |
+|---|---|
+| `newman-corrida-1.html` | Postman, corrida 1 (antes de Playwright) |
+| `newman-corrida-2.html` | Postman, corrida 2 (después de Playwright) |
+| `playwright-con-internet/` | Playwright con conexión a Internet |
+| `playwright-sin-internet/` | Playwright sin conexión a Internet (RNF-01) |
+
+Para abrir uno de ellos: `npx playwright show-report ../reportes/playwright-con-internet` (desde `playwright/`).
+
 ## Compatibilidad de navegadores (RNF)
 
 `specs/99-navegadores.spec.ts` recorre en modo de solo lectura Casos, Registros semanales, Alertas e
